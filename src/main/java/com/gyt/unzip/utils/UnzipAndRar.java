@@ -5,11 +5,15 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import com.github.junrar.Archive;
+import com.github.junrar.exception.RarException;
 import com.github.junrar.rarfile.FileHeader;
 
 public class UnzipAndRar {
 
     private static final int BUFFER_SIZE = 2 * 1024;
+
+    private static final String SCORM_TYPE1 = "imsmanifest.xml";
+    private static final String SCORM_TYPE2 = "cbtstructure.xml";
 
     /**
      * 解压zip
@@ -56,6 +60,7 @@ public class UnzipAndRar {
                 } else {
                     // 如果是文件，就先创建一个文件，然后用io流把内容copy过去
                     File targetFile = new File(outDir + "\\" + entry.getName());
+                    System.err.println("文件名称：" + targetFile.getName());
                     // 保证这个文件的父文件夹必须存在
                     if (!targetFile.getParentFile().exists()) {
                         targetFile.getParentFile().mkdirs();
@@ -119,33 +124,39 @@ public class UnzipAndRar {
             }
         }
 
-        Archive archive = new Archive(new FileInputStream(srcFile));
-        FileHeader fileHeader = archive.nextFileHeader();
-        System.out.println("文件夹路径：" + fileHeader.getFileNameString());
-        while (fileHeader != null) {
-            if (fileHeader.isDirectory()) {
-                fileHeader = archive.nextFileHeader();
-                continue;
-            }
-
-            File out = new File(outDir + fileHeader.getFileNameString());
-            if (!out.exists()) {
-                if (!out.getParentFile().exists()) {
-                    out.getParentFile().mkdirs();
+        try {
+            Archive archive = new Archive(new FileInputStream(srcFile));
+            FileHeader fileHeader = archive.nextFileHeader();
+            System.out.println("文件夹路径：" + fileHeader.getFileNameString());
+            while (fileHeader != null) {
+                if (fileHeader.isDirectory()) {
+                    fileHeader = archive.nextFileHeader();
+                    continue;
                 }
-                out.createNewFile();
+
+                File out = new File(outDir + fileHeader.getFileNameString());
+                System.err.println("读取的文件名称：" + out.getName());
+                if (!out.exists()) {
+                    if (!out.getParentFile().exists()) {
+                        out.getParentFile().mkdirs();
+                    }
+                    out.createNewFile();
+                }
+                FileOutputStream os = new FileOutputStream(out);
+                archive.extractFile(fileHeader, os);
+
+                os.close();
+
+                fileHeader = archive.nextFileHeader();
             }
-            FileOutputStream os = new FileOutputStream(out);
-            archive.extractFile(fileHeader, os);
-
-            os.close();
-
-            fileHeader = archive.nextFileHeader();
+            Long endTime = System.currentTimeMillis();
+            System.out.println("解压Rar完成，耗时：" + (endTime - startTime) + " ms");
+            fixFileName(outDir + "\\" + fileName, coursewareId);
+            archive.close();
+        } catch (RarException e) {
+            System.err.println("不支持rar5压缩包格式: " + e.getMessage());
         }
-        Long endTime = System.currentTimeMillis();
-        System.out.println("解压Rar完成，耗时：" + (endTime - startTime) + " ms");
-        fixFileName(outDir + "\\" + fileName, coursewareId);
-        archive.close();
+
     }
 
     public static String fixFileName(String filePath, String newFileName) {
