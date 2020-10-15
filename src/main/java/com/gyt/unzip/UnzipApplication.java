@@ -5,9 +5,13 @@ import com.gyt.unzip.utils.Doc2Pdf;
 import com.gyt.unzip.utils.PdfSplit;
 import com.gyt.unzip.utils.Ppt2pdf;
 import com.gyt.unzip.utils.UnzipAndRar;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,9 +22,18 @@ import java.io.OutputStream;
 @SpringBootApplication
 public class UnzipApplication {
 
+    private static final Logger log = LoggerFactory.getLogger(UnzipApplication.class);
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
     public static void main(String[] args) throws Exception {
         SpringApplication.run(UnzipApplication.class, args);
-        testUnZip();
+        log.error("test");
+
+//        testUnZip();
 //        testUnRar();
 //        Doc2Pdf.doc2pdf("C:\\Users\\Administrator\\Desktop\\代码走查管理规范 .docx");
 //        Ppt2pdf.ppt2pdf("C:\\Users\\Administrator\\Desktop\\人力系统开发处专业化分工2.0.pptx");
